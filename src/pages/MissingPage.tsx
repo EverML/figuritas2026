@@ -101,7 +101,7 @@ export function MissingPage({
       <header className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-[34px] font-black tracking-tight text-ink">Mundial 2026</h1>
+            <h1 className="text-[34px] font-black tracking-tight text-ink">Mundial 2026 v0.0.1</h1>
             <p className="mt-1 text-[16px] font-medium text-slate-500">
               Me faltan <span className="font-bold text-primary-700">{missing.length}</span> figuritas
             </p>
