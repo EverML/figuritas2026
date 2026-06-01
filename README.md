@@ -37,6 +37,43 @@ La sincronización es opcional.
 - Si cargás el mismo código secreto en dos dispositivos, ambos comparten el mismo estado a través de AWS AppSync.
 - El endpoint de sincronización se puede configurar con `VITE_APPSYNC_URL` si hace falta apuntar a otra API.
 
+## Arquitectura
+
+La parte de backend e infraestructura vive en `infra/` y está separada del frontend.
+
+- **Frontend**: Vite + React + TypeScript + PWA.
+- **Backend**: AWS AppSync como API GraphQL y DynamoDB como almacenamiento del estado.
+- **Acceso**: no usa Cognito por ahora. La API se protege con un código secreto compartido que la app manda como token.
+- **Modo de trabajo**: el dispositivo sigue guardando una copia local para funcionar offline, y sincroniza cuando el código está configurado.
+
+El flujo es simple:
+
+1. La app lee el estado local al abrir.
+2. Si hay un código guardado, consulta AppSync.
+3. Si el estado local cambió, lo sube al backend.
+4. Si otro dispositivo cambió algo, el siguiente sync trae ese estado.
+
+```mermaid
+flowchart LR
+  A[Usuario abre la app] --> B{Hay código secreto?}
+  B -- No --> C[Modo local\nLocalStorage]
+  B -- Sí --> D[AppSync API]
+  D --> E[DynamoDB]
+  E --> F[Estado sincronizado]
+  C --> G[Editar stickers offline]
+  F --> G
+  G --> H{Cambio pendiente?}
+  H -- Sí --> D
+  H -- No --> I[Seguir navegando]
+```
+
+Más abajo está el CDK app si querés tocar la infraestructura:
+
+- `infra/README.md`
+- `infra/lib/figuritas-sync-stack.ts`
+- `infra/lambda/authorizer.ts`
+- `infra/lambda/data-handler.ts`
+
 ## Desarrollo local
 
 ```bash
