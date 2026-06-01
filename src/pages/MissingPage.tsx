@@ -16,6 +16,8 @@ type MissingPageProps = {
   setFilter: (value: "all" | "special" | "country") => void;
   onStickerClick: (sticker: Sticker) => void;
   onShare: () => void;
+  syncState: "idle" | "syncing" | "synced" | "error";
+  lastSyncAt: string | null;
 };
 
 type GroupBucket = {
@@ -43,6 +45,8 @@ export function MissingPage({
   setFilter,
   onStickerClick,
   onShare,
+  syncState,
+  lastSyncAt,
 }: MissingPageProps) {
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = parseSearchQuery(deferredSearch);
@@ -105,6 +109,16 @@ export function MissingPage({
             <h1 className="text-[34px] font-black tracking-tight text-ink">Mundial 2026 v{APP_VERSION}</h1>
             <p className="mt-1 text-[16px] font-medium text-slate-500">
               Me faltan <span className="font-bold text-primary-700">{missing.length}</span> figuritas
+            </p>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              {syncState === "syncing"
+                ? "Sincronizando"
+                : syncState === "synced"
+                  ? "Sincronizado"
+                  : syncState === "error"
+                    ? "Error de sync"
+                    : "Solo local"}
+              {lastSyncAt ? ` · ${new Date(lastSyncAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}` : ""}
             </p>
           </div>
           <button

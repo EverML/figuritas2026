@@ -14,3 +14,11 @@ declare module "virtual:pwa-register" {
 
   export function registerSW(options?: RegisterSWOptions): () => Promise<void>;
 }
+
+interface ImportMetaEnv {
+  readonly VITE_APPSYNC_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

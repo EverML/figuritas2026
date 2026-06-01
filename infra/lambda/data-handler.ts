@@ -6,7 +6,11 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 type AppSyncEvent = {
-  fieldName: string;
+  fieldName?: string;
+  info?: {
+    fieldName?: string;
+    parentTypeName?: string;
+  };
   arguments: Record<string, any>;
 };
 
@@ -39,7 +43,9 @@ function sortStickers<T extends { groupLabel?: string; prefix?: string; number?:
 }
 
 export const handler = async (event: AppSyncEvent) => {
-  switch (event.fieldName) {
+  const fieldName = event.fieldName ?? event.info?.fieldName;
+
+  switch (fieldName) {
     case "listStickers": {
       const response = await client.send(
         new QueryCommand({
@@ -165,6 +171,6 @@ export const handler = async (event: AppSyncEvent) => {
     }
 
     default:
-      throw new Error(`Unsupported field: ${event.fieldName}`);
+      throw new Error(`Unsupported field: ${fieldName}`);
   }
 };
