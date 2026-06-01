@@ -1,11 +1,11 @@
 # FALTA   
-ESPECIALES   
+-- ESPECIALES
 - [ ] FWC 1   
 - [ ] FWC 3  
 - [ ] FWC 4  
 - [ ] FWC 6   
 - [ ] FWC 11   
-PAÍSES   
+-- PAÍSES
 - [ ] México 1   
 - [ ] México 5  
 - [ ] México 6   
@@ -280,6 +280,6 @@ PAÍSES
 - [ ] PAN 11  
 - [ ] PAN 15  
 - [ ] PAN 19  
-COCA COLA  
+-- COCA COLA
 - [ ] CC 5  
 - [ ] CC 12  

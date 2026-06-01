@@ -4,15 +4,38 @@ import {
   buildStickerId,
   cleanGroupLabel,
   isDigitsOnly,
-  normalizeCountryKey,
 } from "./stickers";
 import type { Sticker, StickerGroupType } from "../types/sticker";
 import { formatStickerNumber, normalizeTextKey, stripAccents } from "./formatters";
+
+function isHeaderLine(line: string): boolean {
+  if (!line || line.startsWith("#")) {
+    return false;
+  }
+
+  if (line.startsWith("--")) {
+    return true;
+  }
+
+  if (line.startsWith("- [ ]")) {
+    return false;
+  }
+
+  if (/\d/.test(line)) {
+    return false;
+  }
+
+  return /^[A-ZÁÉÍÓÚÜÑ\s]+$/i.test(line);
+}
 
 function detectGroupType(header: string): StickerGroupType {
   const normalized = normalizeTextKey(header);
 
   if (normalized.includes("especial")) {
+    return "special";
+  }
+
+  if (normalized.includes("coca cola") || normalized.includes("cocacola")) {
     return "special";
   }
 
@@ -99,7 +122,7 @@ export function parseMissingStickers(input: string): Sticker[] {
       continue;
     }
 
-    if (line.startsWith("--")) {
+    if (isHeaderLine(line)) {
       currentGroupLabel = cleanGroupLabel(line);
       currentGroupType = detectGroupType(line);
       continue;
