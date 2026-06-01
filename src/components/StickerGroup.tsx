@@ -5,10 +5,17 @@ type StickerGroupProps = {
   title: string;
   count: number;
   stickers: Sticker[];
+  pendingStickerId?: string | null;
   onStickerClick: (sticker: Sticker) => void;
 };
 
-export function StickerGroup({ title, count, stickers, onStickerClick }: StickerGroupProps) {
+export function StickerGroup({
+  title,
+  count,
+  stickers,
+  pendingStickerId,
+  onStickerClick,
+}: StickerGroupProps) {
   return (
     <section className="rounded-[28px] border border-line bg-white p-4 shadow-soft">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -23,7 +30,12 @@ export function StickerGroup({ title, count, stickers, onStickerClick }: Sticker
 
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {stickers.map((sticker) => (
-          <StickerCard key={sticker.id} sticker={sticker} onClick={onStickerClick} />
+          <StickerCard
+            key={sticker.id}
+            sticker={sticker}
+            isPending={pendingStickerId === sticker.id}
+            onClick={onStickerClick}
+          />
         ))}
       </div>
     </section>

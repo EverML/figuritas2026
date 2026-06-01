@@ -46,6 +46,7 @@ export default function App() {
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncDirty, setSyncDirty] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [pendingStickerId, setPendingStickerId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("missing");
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -70,6 +71,18 @@ export default function App() {
 
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    if (!pendingStickerId) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setPendingStickerId(null);
+    }, 4000);
+
+    return () => window.clearTimeout(timeout);
+  }, [pendingStickerId]);
 
   useEffect(() => {
     if (!syncCode) {
@@ -177,6 +190,15 @@ export default function App() {
   }
 
   function handleStickerClick(sticker: Sticker) {
+    if (pendingStickerId !== sticker.id) {
+      setPendingStickerId(sticker.id);
+      setToast({
+        message: `Tocá otra vez para confirmar ${formatStickerCode(sticker.prefix, sticker.number)}`,
+      });
+      return;
+    }
+
+    setPendingStickerId(null);
     const nextStatus = sticker.status === "missing" ? "owned" : "missing";
     const updatedSticker: Sticker = {
       ...sticker,
@@ -194,6 +216,7 @@ export default function App() {
       actionLabel: "Deshacer",
       onAction: () => {
         setSyncDirty(true);
+        setPendingStickerId(null);
         updateSticker({
           ...sticker,
           status: sticker.status,
@@ -318,6 +341,7 @@ export default function App() {
             filter={filter}
             setFilter={setFilter}
             onStickerClick={handleStickerClick}
+            pendingStickerId={pendingStickerId}
             onShare={handleShare}
             syncState={syncState}
             lastSyncAt={lastSyncAt}
@@ -329,6 +353,7 @@ export default function App() {
             stickers={stickers}
             query={searchQuery}
             setQuery={setSearchQuery}
+            pendingStickerId={pendingStickerId}
             onStickerClick={handleStickerClick}
           />
         ) : null}

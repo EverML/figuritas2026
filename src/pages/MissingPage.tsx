@@ -14,6 +14,7 @@ type MissingPageProps = {
   setSearch: (value: string) => void;
   filter: "all" | "special" | "country";
   setFilter: (value: "all" | "special" | "country") => void;
+  pendingStickerId: string | null;
   onStickerClick: (sticker: Sticker) => void;
   onShare: () => void;
   syncState: "idle" | "syncing" | "synced" | "error";
@@ -43,6 +44,7 @@ export function MissingPage({
   setSearch,
   filter,
   setFilter,
+  pendingStickerId,
   onStickerClick,
   onShare,
   syncState,
@@ -157,6 +159,7 @@ export function MissingPage({
             title={group.title}
             count={group.stickers.length}
             stickers={group.stickers}
+            pendingStickerId={pendingStickerId}
             onStickerClick={onStickerClick}
           />
         ))}

@@ -10,10 +10,17 @@ type QuickSearchPageProps = {
   stickers: Sticker[];
   query: string;
   setQuery: (value: string) => void;
+  pendingStickerId: string | null;
   onStickerClick: (sticker: Sticker) => void;
 };
 
-export function QuickSearchPage({ stickers, query, setQuery, onStickerClick }: QuickSearchPageProps) {
+export function QuickSearchPage({
+  stickers,
+  query,
+  setQuery,
+  pendingStickerId,
+  onStickerClick,
+}: QuickSearchPageProps) {
   const deferredQuery = useDeferredValue(query);
   const parsed = parseSearchQuery(deferredQuery);
   const normalized = parsed.compact;
@@ -67,7 +74,7 @@ export function QuickSearchPage({ stickers, query, setQuery, onStickerClick }: Q
             onClick={() => onStickerClick(missingMatches[0])}
             className="rounded-2xl bg-primary-700 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-primary-800"
           >
-            Marcar como conseguida
+            {pendingStickerId === missingMatches[0].id ? "Confirmar cambio" : "Marcar como conseguida"}
           </button>
         );
       }
@@ -118,7 +125,11 @@ export function QuickSearchPage({ stickers, query, setQuery, onStickerClick }: Q
                   key={sticker.id}
                   type="button"
                   onClick={() => onStickerClick(sticker)}
-                  className="flex w-full items-center justify-between rounded-[24px] border border-line bg-white px-4 py-4 text-left shadow-soft transition hover:bg-slate-50"
+                  aria-pressed={pendingStickerId === sticker.id}
+                  className={[
+                    "flex w-full items-center justify-between rounded-[24px] border px-4 py-4 text-left shadow-soft transition hover:bg-slate-50",
+                    pendingStickerId === sticker.id ? "border-primary-500 bg-primary-50 ring-2 ring-primary-200" : "border-line bg-white",
+                  ].join(" ")}
                 >
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
