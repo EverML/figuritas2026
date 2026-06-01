@@ -1,6 +1,6 @@
 import type { Sticker } from "../types/sticker";
 
-const STORAGE_KEY = "world-cup-stickers-state-v1";
+const STORAGE_KEY = "world-cup-stickers-state-v2";
 
 export function loadStickers(): Sticker[] {
   if (typeof window === "undefined") {
