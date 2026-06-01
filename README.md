@@ -74,6 +74,19 @@ Más abajo está el CDK app si querés tocar la infraestructura:
 - `infra/lambda/authorizer.ts`
 - `infra/lambda/data-handler.ts`
 
+## Roadmap
+
+Esto es opcional y solo aplica si el proyecto empieza a tener más gente interesada.
+Si no, el plan es dejarlo tal cual está.
+
+- Mantener el modo actual: un código compartido, PWA local-first y sync opcional.
+- Preparar el backend para múltiples grupos o tenants, sin meter Cognito todavía.
+- Hacer que el código secreto apunte a un `tenantId` real en la infraestructura.
+- Agregar una forma simple de crear o desactivar códigos si hace falta.
+- Evaluar mejoras de sync en vivo solo si el polling deja de alcanzar.
+
+La idea es no complicar el proyecto antes de tiempo. Si nadie más lo usa, se queda en su forma simple actual.
+
 ## Desarrollo local
 
 ```bash
