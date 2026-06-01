@@ -1,0 +1,57 @@
+enum StickerStatus {
+  missing
+  owned
+}
+
+enum StickerGroupType {
+  special
+  country
+  unknown
+}
+
+type Sticker {
+  id: ID!
+  code: String!
+  prefix: String!
+  number: String!
+  groupLabel: String!
+  groupType: StickerGroupType!
+  countryCode: String
+  countryName: String
+  status: StickerStatus!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+input StickerInput {
+  id: ID!
+  code: String!
+  prefix: String!
+  number: String!
+  groupLabel: String!
+  groupType: StickerGroupType!
+  countryCode: String
+  countryName: String
+  status: StickerStatus!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+input ReplaceStickersInput {
+  stickers: [StickerInput!]!
+}
+
+type Query {
+  listStickers: [Sticker!]!
+}
+
+type Mutation {
+  replaceStickers(input: ReplaceStickersInput!): [Sticker!]!
+  setStickerStatus(id: ID!, status: StickerStatus!): Sticker
+  clearStickers: Boolean!
+}
+
+type Subscription {
+  onStickerChanged: Sticker
+    @aws_subscribe(mutations: ["replaceStickers", "setStickerStatus"])
+}
