@@ -19,6 +19,13 @@ type StickerMutationResponse = {
   replaceStickers: Sticker[];
 };
 
+export class StickerConflictError extends Error {
+  constructor() {
+    super("STICKER_CONFLICT");
+    this.name = "StickerConflictError";
+  }
+}
+
 async function requestGraphql<T>(
   query: string,
   variables: Record<string, unknown>,
@@ -39,7 +46,12 @@ async function requestGraphql<T>(
 
   const payload = (await response.json()) as GraphqlResponse<T>;
   if (payload.errors?.length) {
-    throw new Error(payload.errors.map((error) => error.message ?? "GraphQL error").join(", "));
+    const message = payload.errors.map((error) => error.message ?? "GraphQL error").join(", ");
+    if (message.includes("STICKER_CONFLICT")) {
+      throw new StickerConflictError();
+    }
+
+    throw new Error(message);
   }
 
   if (!payload.data) {
@@ -105,10 +117,11 @@ export async function setRemoteStickerStatus(
   syncCode: string,
   id: string,
   status: StickerStatus,
+  expectedUpdatedAt?: string,
 ): Promise<Sticker | null> {
   const data = await requestGraphql<StickerMutationResponse>(
-    `mutation SetStickerStatus($id: ID!, $status: StickerStatus!) {
-      setStickerStatus(id: $id, status: $status) {
+    `mutation SetStickerStatus($id: ID!, $status: StickerStatus!, $expectedUpdatedAt: AWSDateTime) {
+      setStickerStatus(id: $id, status: $status, expectedUpdatedAt: $expectedUpdatedAt) {
         id
         code
         prefix
@@ -125,6 +138,7 @@ export async function setRemoteStickerStatus(
     {
       id,
       status,
+      expectedUpdatedAt,
     },
     syncCode,
   );

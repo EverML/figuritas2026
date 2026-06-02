@@ -4,6 +4,7 @@ import {
   QueryCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 
 type AppSyncEvent = {
   fieldName?: string;
@@ -114,27 +115,38 @@ export const handler = async (event: AppSyncEvent) => {
     }
 
     case "setStickerStatus": {
-      const { id, status } = event.arguments;
-      const response = await client.send(
-        new UpdateCommand({
-          TableName: tableName,
-          Key: {
-            albumId,
-            id,
-          },
-          UpdateExpression: "SET #status = :status, updatedAt = :updatedAt",
-          ExpressionAttributeNames: {
-            "#status": "status",
-          },
-          ExpressionAttributeValues: {
-            ":status": status,
-            ":updatedAt": new Date().toISOString(),
-          },
-          ReturnValues: "ALL_NEW",
-        }),
-      );
+      const { id, status, expectedUpdatedAt } = event.arguments;
 
-      return response.Attributes ?? null;
+      try {
+        const response = await client.send(
+          new UpdateCommand({
+            TableName: tableName,
+            Key: {
+              albumId,
+              id,
+            },
+            UpdateExpression: "SET #status = :status, updatedAt = :updatedAt",
+            ConditionExpression: expectedUpdatedAt ? "updatedAt = :expectedUpdatedAt" : undefined,
+            ExpressionAttributeNames: {
+              "#status": "status",
+            },
+            ExpressionAttributeValues: {
+              ":status": status,
+              ":updatedAt": new Date().toISOString(),
+              ...(expectedUpdatedAt ? { ":expectedUpdatedAt": expectedUpdatedAt } : {}),
+            },
+            ReturnValues: "ALL_NEW",
+          }),
+        );
+
+        return response.Attributes ?? null;
+      } catch (error) {
+        if (error instanceof ConditionalCheckFailedException) {
+          throw new Error("STICKER_CONFLICT");
+        }
+
+        throw error;
+      }
     }
 
     case "clearStickers": {

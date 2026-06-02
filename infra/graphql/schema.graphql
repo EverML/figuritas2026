@@ -47,7 +47,7 @@ type Query {
 
 type Mutation {
   replaceStickers(input: ReplaceStickersInput!): [Sticker!]!
-  setStickerStatus(id: ID!, status: StickerStatus!): Sticker
+  setStickerStatus(id: ID!, status: StickerStatus!, expectedUpdatedAt: AWSDateTime): Sticker
   clearStickers: Boolean!
 }
 

@@ -17,7 +17,13 @@ import {
 import { INITIAL_DATASET } from "./lib/seed";
 import { parseMissingStickers } from "./lib/parser";
 import { formatStickerCode } from "./lib/formatters";
-import { fetchRemoteStickers, getSyncEndpoint, replaceRemoteStickers } from "./lib/sync";
+import {
+  fetchRemoteStickers,
+  getSyncEndpoint,
+  replaceRemoteStickers,
+  setRemoteStickerStatus,
+  StickerConflictError,
+} from "./lib/sync";
 
 type FilterKey = "all" | "special" | "country";
 type SyncState = "idle" | "syncing" | "synced" | "error";
@@ -182,11 +188,99 @@ export default function App() {
           ? {
               ...sticker,
               status: nextSticker.status,
-              updatedAt: new Date().toISOString(),
+              updatedAt: nextSticker.updatedAt,
             }
           : sticker,
       ),
     );
+  }
+
+  function showStickerUpdatedToast(sticker: Sticker, nextStatus: Sticker["status"], previousSticker: Sticker) {
+    setToast({
+      message:
+        nextStatus === "owned"
+          ? `${formatStickerCode(sticker.prefix, sticker.number)} marcada como conseguida`
+          : `${formatStickerCode(sticker.prefix, sticker.number)} marcada como faltante`,
+      actionLabel: "Deshacer",
+      onAction: () => {
+        setSyncDirty(true);
+        setPendingStickerId(null);
+        updateSticker({
+          ...previousSticker,
+          updatedAt: new Date().toISOString(),
+        });
+        setToast(null);
+      },
+    });
+  }
+
+  async function confirmSyncedStickerChange(sticker: Sticker) {
+    setSyncState("syncing");
+
+    try {
+      let remote = await fetchRemoteStickers(syncCode);
+      if (remote.length === 0 && stickers.length > 0) {
+        remote = await replaceRemoteStickers(syncCode, stickers);
+      }
+
+      const freshSticker = remote.find((remoteSticker) => remoteSticker.id === sticker.id) ?? sticker;
+
+      if (remote.length > 0) {
+        setStickers(remote);
+      }
+
+      if (sticker.status === "missing" && freshSticker.status === "owned") {
+        setStickers(remote);
+        setSyncDirty(false);
+        setLastSyncAt(new Date().toISOString());
+        setSyncState("synced");
+        throw new StickerConflictError();
+      }
+
+      const nextStatus = freshSticker.status === "missing" ? "owned" : "missing";
+      const updatedSticker = await setRemoteStickerStatus(
+        syncCode,
+        freshSticker.id,
+        nextStatus,
+        freshSticker.updatedAt,
+      );
+
+      if (!updatedSticker) {
+        throw new Error("No sticker returned from server");
+      }
+
+      const nextStickers = (remote.length > 0 ? remote : stickers).map((currentSticker) =>
+        currentSticker.id === updatedSticker.id ? updatedSticker : currentSticker,
+      );
+
+      setStickers(nextStickers);
+      setSyncDirty(false);
+      setLastSyncAt(new Date().toISOString());
+      setSyncState("synced");
+      showStickerUpdatedToast(updatedSticker, nextStatus, freshSticker);
+    } catch (error) {
+      if (error instanceof StickerConflictError) {
+        try {
+          const remote = await fetchRemoteStickers(syncCode);
+          setStickers(remote);
+          setLastSyncAt(new Date().toISOString());
+          setSyncState("synced");
+        } catch {
+          setSyncState("error");
+        }
+
+        setSyncDirty(false);
+        setToast({
+          message: `${formatStickerCode(sticker.prefix, sticker.number)} ya fue marcada como conseguida en otro dispositivo`,
+        });
+        return;
+      }
+
+      setSyncState("error");
+      setToast({
+        message: "No se pudo confirmar contra el servidor",
+      });
+    }
   }
 
   function handleStickerClick(sticker: Sticker) {
@@ -199,6 +293,12 @@ export default function App() {
     }
 
     setPendingStickerId(null);
+
+    if (syncCode) {
+      void confirmSyncedStickerChange(sticker);
+      return;
+    }
+
     const nextStatus = sticker.status === "missing" ? "owned" : "missing";
     const updatedSticker: Sticker = {
       ...sticker,
@@ -208,24 +308,7 @@ export default function App() {
 
     setSyncDirty(true);
     updateSticker(updatedSticker);
-    setToast({
-      message:
-        nextStatus === "owned"
-          ? `${formatStickerCode(sticker.prefix, sticker.number)} marcada como conseguida`
-          : `${formatStickerCode(sticker.prefix, sticker.number)} marcada como faltante`,
-      actionLabel: "Deshacer",
-      onAction: () => {
-        setSyncDirty(true);
-        setPendingStickerId(null);
-        updateSticker({
-          ...sticker,
-          status: sticker.status,
-          updatedAt: new Date().toISOString(),
-        });
-        setToast(null);
-      },
-    });
-
+    showStickerUpdatedToast(updatedSticker, nextStatus, sticker);
   }
 
   function handleShare() {
