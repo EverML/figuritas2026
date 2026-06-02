@@ -75,7 +75,7 @@ export default function App() {
 
     const timeout = window.setTimeout(() => {
       setToast(null);
-    }, 3500);
+    }, toast.variant === "error" ? 7000 : 3500);
 
     return () => window.clearTimeout(timeout);
   }, [toast]);
@@ -273,14 +273,21 @@ export default function App() {
 
         setSyncDirty(false);
         setToast({
-          message: `${formatStickerCode(sticker.prefix, sticker.number)} ya fue marcada como conseguida en otro dispositivo`,
+          title: "No se confirmó",
+          message: `${formatStickerCode(
+            sticker.prefix,
+            sticker.number,
+          )} ya fue marcada como conseguida en otro dispositivo. Actualicé la lista con el servidor.`,
+          variant: "error",
         });
         return;
       }
 
       setSyncState("error");
       setToast({
-        message: "No se pudo confirmar contra el servidor",
+        title: "No se pudo confirmar",
+        message: "No pude validar el cambio contra el servidor. Probá de nuevo antes de marcarla.",
+        variant: "error",
       });
     }
   }
