@@ -3,10 +3,15 @@ import type { Sticker } from "../types/sticker";
 import { EmptyState } from "../components/EmptyState";
 import { ImportTextarea } from "../components/ImportTextarea";
 import { parseMissingStickers } from "../lib/parser";
+import { COUNTRY_NAMES } from "../lib/countries";
+import { formatStickerCode, formatStickerNumber } from "../lib/formatters";
 
 type ImportPageProps = {
+  stickers: Sticker[];
   stickerCount: number;
   onImport: (stickers: Sticker[]) => void;
+  onAddCountryPending: (countryCode: string, number: string) => void;
+  onRemovePendingSticker: (sticker: Sticker) => void;
   syncCode: string;
   syncState: "idle" | "syncing" | "synced" | "error";
   lastSyncAt: string | null;
@@ -27,8 +32,11 @@ PAN 04
 PAN 07`;
 
 export function ImportPage({
+  stickers,
   stickerCount,
   onImport,
+  onAddCountryPending,
+  onRemovePendingSticker,
   syncCode,
   syncState,
   lastSyncAt,
@@ -40,9 +48,32 @@ export function ImportPage({
   const [draft, setDraft] = useState(SAMPLE_TEXT);
   const [pendingImport, setPendingImport] = useState<Sticker[] | null>(null);
   const [syncDraft, setSyncDraft] = useState(syncCode);
+  const [countryCode, setCountryCode] = useState("PAN");
+  const [countryNumber, setCountryNumber] = useState("");
 
   const preview = useMemo(() => parseMissingStickers(draft), [draft]);
   const parsedCount = preview.length;
+  const countryOptions = useMemo(
+    () =>
+      Object.entries(COUNTRY_NAMES)
+        .filter(([code]) => /^[A-Z]{2,5}$/.test(code))
+        .sort((left, right) => left[1].localeCompare(right[1], "es")),
+    [],
+  );
+  const selectedCountryPending = useMemo(
+    () =>
+      stickers
+        .filter(
+          (sticker) =>
+            sticker.groupType === "country" &&
+            sticker.prefix === countryCode &&
+            sticker.status === "missing",
+        )
+        .sort((left, right) => Number(left.number) - Number(right.number)),
+    [countryCode, stickers],
+  );
+  const formattedCountryNumber = formatStickerNumber(countryNumber);
+  const canAddCountryPending = /^\d{1,3}$/.test(countryNumber.trim());
 
   useEffect(() => {
     setSyncDraft(syncCode);
@@ -72,6 +103,15 @@ export function ImportPage({
 
   function handleSaveSyncCode() {
     onSaveSyncCode(syncDraft);
+  }
+
+  function handleAddCountryPending() {
+    if (!canAddCountryPending) {
+      return;
+    }
+
+    onAddCountryPending(countryCode, formattedCountryNumber);
+    setCountryNumber("");
   }
 
   return (
@@ -138,6 +178,77 @@ export function ImportPage({
         <div className="mt-3 space-y-1 text-xs font-medium text-slate-500">
           <p>{syncEndpoint}</p>
           <p>{lastSyncAt ? `Última sync: ${new Date(lastSyncAt).toLocaleString("es-AR")}` : "Todavía no sincronizó"}</p>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-line bg-white p-4 shadow-soft">
+        <div>
+          <h2 className="text-lg font-extrabold text-ink">Ajustar faltantes por país</h2>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            Agregá o quitá números puntuales sin reemplazar toda la lista.
+          </p>
+        </div>
+
+        <div className="mt-4 grid grid-cols-[1fr_96px] gap-3">
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">País</span>
+            <select
+              value={countryCode}
+              onChange={(event) => setCountryCode(event.target.value)}
+              className="mt-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink outline-none transition focus:border-primary-600"
+            >
+              {countryOptions.map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name} ({code})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nro.</span>
+            <input
+              value={countryNumber}
+              onChange={(event) => setCountryNumber(event.target.value.replace(/\D/g, "").slice(0, 3))}
+              type="text"
+              inputMode="numeric"
+              placeholder="07"
+              className="mt-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink outline-none transition focus:border-primary-600"
+            />
+          </label>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleAddCountryPending}
+          disabled={!canAddCountryPending}
+          className="mt-3 w-full rounded-2xl bg-primary-700 px-4 py-3 text-sm font-bold text-white shadow-float transition hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Agregar {canAddCountryPending ? formatStickerCode(countryCode, formattedCountryNumber) : "faltante"}
+        </button>
+
+        <div className="mt-4">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+            Faltantes actuales
+          </p>
+          {selectedCountryPending.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedCountryPending.map((sticker) => (
+                <button
+                  key={sticker.id}
+                  type="button"
+                  onClick={() => onRemovePendingSticker(sticker)}
+                  className="rounded-full border border-line bg-slate-50 px-3 py-2 text-xs font-bold text-ink transition hover:border-primary-300 hover:bg-primary-50"
+                >
+                  Quitar {formatStickerCode(sticker.prefix, sticker.number)}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              No hay faltantes cargadas para este país.
+            </p>
+          )}
         </div>
       </section>
 

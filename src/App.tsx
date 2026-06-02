@@ -17,6 +17,8 @@ import {
 import { INITIAL_DATASET } from "./lib/seed";
 import { parseMissingStickers } from "./lib/parser";
 import { formatStickerCode } from "./lib/formatters";
+import { resolveCountryName } from "./lib/countries";
+import { buildStickerCode, buildStickerId } from "./lib/stickers";
 import {
   fetchRemoteStickers,
   getSyncEndpoint,
@@ -347,6 +349,73 @@ export default function App() {
 
   }
 
+  function handleAddCountryPending(countryCode: string, number: string) {
+    const normalizedCountryCode = countryCode.toUpperCase();
+    const id = buildStickerId(normalizedCountryCode, number);
+    const timestamp = new Date().toISOString();
+
+    setSyncDirty(true);
+    setStickers((current) => {
+      const existing = current.find((sticker) => sticker.id === id);
+      if (existing) {
+        return current.map((sticker) =>
+          sticker.id === id
+            ? {
+                ...sticker,
+                status: "missing",
+                updatedAt: timestamp,
+              }
+            : sticker,
+        );
+      }
+
+      return [
+        ...current,
+        {
+          id,
+          code: buildStickerCode(normalizedCountryCode, number),
+          prefix: normalizedCountryCode,
+          number,
+          groupLabel: "Países",
+          groupType: "country",
+          countryCode: normalizedCountryCode,
+          countryName: resolveCountryName(normalizedCountryCode),
+          status: "missing",
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ];
+    });
+
+    setToast({
+      message: `${buildStickerCode(normalizedCountryCode, number)} agregada como faltante`,
+    });
+  }
+
+  function handleRemovePendingSticker(sticker: Sticker) {
+    const timestamp = new Date().toISOString();
+
+    setSyncDirty(true);
+    updateSticker({
+      ...sticker,
+      status: "owned",
+      updatedAt: timestamp,
+    });
+    setToast({
+      message: `${formatStickerCode(sticker.prefix, sticker.number)} quitada de faltantes`,
+      actionLabel: "Deshacer",
+      onAction: () => {
+        setSyncDirty(true);
+        updateSticker({
+          ...sticker,
+          status: "missing",
+          updatedAt: new Date().toISOString(),
+        });
+        setToast(null);
+      },
+    });
+  }
+
   function handleSaveSyncCode(nextCode: string) {
     const trimmed = nextCode.trim();
     if (trimmed && !/^\d{8}$/.test(trimmed)) {
@@ -447,8 +516,11 @@ export default function App() {
 
         {activeTab === "import" ? (
           <ImportPage
+            stickers={stickers}
             stickerCount={stickers.length}
             onImport={handleImport}
+            onAddCountryPending={handleAddCountryPending}
+            onRemovePendingSticker={handleRemovePendingSticker}
             syncCode={syncCode}
             syncState={syncState}
             lastSyncAt={lastSyncAt}
