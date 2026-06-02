@@ -26,8 +26,15 @@ No está pensado como una aplicación seria de producción, ni como una herramie
 
 ## Versionado
 
-La versión visible en la pantalla principal sale de `package.json` y se muestra en el header de la vista de faltantes.
+La versión sale de `package.json` y se puede ver tocando dos veces el título `Mundial 2026` en la vista de faltantes.
 Cada cambio relevante debería venir acompañado por un bump de versión para que la app lo refleje.
+
+## Funcionalidades recientes
+
+- **Importación y ajustes manuales**: la app tiene una pantalla para importar faltantes y ajustar pendientes por país, útil cuando una lista inicial viene incompleta o hay figuritas mal marcadas.
+- **Errores de sincronización más visibles**: si otro dispositivo ya marcó una figurita como conseguida, la app muestra un panel rojo grande y actualiza la lista con el estado del servidor.
+- **Mejor soporte para iPhone con notch**: el header respeta el `safe-area` del dispositivo para que el título y el botón de compartir no queden pegados a la parte superior.
+- **Header más limpio**: el título muestra solo `Mundial 2026` por defecto; la versión aparece solo al hacer doble tap sobre el nombre de la app.
 
 ## Sincronización
 
