@@ -1,4 +1,4 @@
-import { useDeferredValue } from "react";
+import { useDeferredValue, useState } from "react";
 import type { Sticker } from "../types/sticker";
 import { EmptyState } from "../components/EmptyState";
 import { FilterChips } from "../components/FilterChips";
@@ -50,6 +50,7 @@ export function MissingPage({
   syncState,
   lastSyncAt,
 }: MissingPageProps) {
+  const [showVersion, setShowVersion] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = parseSearchQuery(deferredSearch);
 
@@ -108,7 +109,24 @@ export function MissingPage({
       <header className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-[34px] font-black tracking-tight text-ink">Mundial 2026 v{APP_VERSION}</h1>
+            <div className="flex flex-wrap items-baseline gap-2">
+              <h1>
+                <button
+                  type="button"
+                  onDoubleClick={() => setShowVersion((current) => !current)}
+                  className="-ml-1 rounded-2xl px-1 text-left text-[34px] font-black tracking-tight text-ink transition active:scale-[0.99]"
+                  aria-label={showVersion ? "Ocultar versión de la app" : "Mostrar versión de la app"}
+                  aria-pressed={showVersion}
+                >
+                  Mundial 2026
+                </button>
+              </h1>
+              {showVersion ? (
+                <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-black text-slate-600">
+                  v{APP_VERSION}
+                </span>
+              ) : null}
+            </div>
             <p className="mt-1 text-[16px] font-medium text-slate-500">
               Me faltan <span className="font-bold text-primary-700">{missing.length}</span> figuritas
             </p>
