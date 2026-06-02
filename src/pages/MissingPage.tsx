@@ -132,7 +132,7 @@ export function MissingPage({
           </button>
         </div>
 
-        <div className="sticky top-4 z-20 space-y-3 rounded-[28px] bg-canvas/95 py-1 backdrop-blur">
+        <div className="sticky top-[calc(env(safe-area-inset-top)+1rem)] z-20 space-y-3 rounded-[28px] bg-canvas/95 py-1 backdrop-blur">
           <SearchBar value={search} onChange={setSearch} />
           <FilterChips value={filter} options={filterOptions} onChange={setFilter} />
         </div>
